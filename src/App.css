@@ -2,6 +2,30 @@
   text-align: center;
 }
 
+button {
+  margin: 10px;
+}
+
+.sound-wave {
+  margin-top: 20px;
+}
+
+.notes {
+  margin-top: 20px;
+}
+
+.note {
+  background-color: #f3f3f3;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px;
+}
+
+.note button {
+  margin-top: 10px;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;
