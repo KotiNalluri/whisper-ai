@@ -28,27 +28,49 @@ const App = () => {
     const formData = new FormData();
     formData.append('file', recordedBlob.blob, 'recording.wav');
 
-    fetch('http://localhost:8000/transcribe', {
+    fetch('http://localhost:8000/transcribe/', {
       method: 'POST',
       body: formData,
     })
-      .then(response => response.json())
-      .then(data => {
-        setTranscription(data.text);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        setTranscription('Error transcribing audio.');
-      });
+    .then(response => response.json())
+    .then(data => {
+      setTranscription(data.text);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      setTranscription('Error transcribing audio.');
+    });
   };
 
-  const addNote = () => {
-    setNotes([...notes, transcription]);
-    setTranscription('');
+  const summarizeAndSaveNote = () => {
+    if (!transcription.trim()) {
+      console.warn("Transcription is empty, no data to summarize.");
+      return;
+    }
+
+    console.log("Saving note... Transcription to summarize:", transcription);
+    fetch('http://localhost:8000/summarize/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ text: transcription }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("Summary data:", data);
+      if (data.summary && data.summary.trim()) {
+        setNotes(prevNotes => [...prevNotes, data.summary.trim()]);
+        setTranscription('');
+      } else {
+        console.warn("Empty or invalid summary received.");
+      }
+    })
+    .catch(error => {
+      console.error('Error summarizing text:', error);
+    });
   };
 
   const deleteNote = (index) => {
-    setNotes(notes.filter((note, i) => i !== index));
+    setNotes(notes.filter((_, i) => i !== index));
   };
 
   return (
@@ -75,7 +97,7 @@ const App = () => {
               Stop Recording
             </Button>
           </Stack>
-          <Button variant="contained" color="success" onClick={addNote} disabled={!transcription}>
+          <Button variant="contained" color="success" onClick={summarizeAndSaveNote} disabled={!transcription}>
             Save as Note
           </Button>
         </Stack>
@@ -101,3 +123,4 @@ const App = () => {
 };
 
 export default App;
+
