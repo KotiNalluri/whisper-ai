@@ -1,5 +1,5 @@
 import logging
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 import whisper
 import os
@@ -15,16 +15,17 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Set up CORS (Cross-Origin Resource Sharing)
-origins = ["https://whisper-api.dev.arinternal.xyz"]
+origins = [
+    "http://localhost:3000",  
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Load models for transcription and summarization
 logger.debug("Loading Whisper model...")
 audio_model = whisper.load_model("base")
@@ -41,12 +42,10 @@ async def transcribe_audio(file: UploadFile = File(...)):
     logger.debug("Received file for transcription.")
     with NamedTemporaryFile(delete=False) as temp_file:
         try:
-            # Write uploaded file to temp file
             logger.debug("Writing uploaded file to temp file.")
             temp_file.write(await file.read())
             temp_file.flush()
             logger.debug("Transcribing audio.")
-            # Transcribe audio using Whisper
             result = audio_model.transcribe(temp_file.name)
             transcription_text = result["text"]
             logger.debug("Transcription successful.")
@@ -58,13 +57,14 @@ async def transcribe_audio(file: UploadFile = File(...)):
             os.remove(temp_file.name)
 
 @app.post("/summarize/")
-async def summarize_text(text: str = Form(...)):
+async def summarize_text(text: str = Body(...)):
     logger.debug("Received text for summarization.")
     try:
         if not text.strip():
+            logger.warning("Empty transcription text received for summarization.")
             raise HTTPException(status_code=400, detail="Empty transcription text")
         
-        # Determine max_length based on the length of the input text
+        logger.debug("Determining max_length based on input text length.")
         input_length = len(text.split())
         max_length = min(512, max(3, input_length))  # Set max_length to a reasonable size
         
@@ -75,8 +75,7 @@ async def summarize_text(text: str = Form(...)):
         return {"summary": summarized_text}
     except Exception as e:
         logger.error(f"Summarization failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
-
+        raise HTTPException(status_code=500, detail="Summarization failed. Please try again.")
 
 # Main entry point for running the app
 if __name__ == "__main__":

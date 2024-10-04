@@ -55,8 +55,8 @@ const App = () => {
 
     fetch('https://whisper-api.dev.arinternal.xyz/summarize/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ text: transcription }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: transcription }),  // Send transcription as JSON
     })
     .then(response => {
       if (!response.ok) {
@@ -131,4 +131,3 @@ const App = () => {
 };
 
 export default App;
-
