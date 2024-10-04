@@ -1,11 +1,11 @@
-import logging
-from fastapi import FastAPI, UploadFile, File, HTTPException, Body
+from fastapi import FastAPI, HTTPException, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
+import logging
 import whisper
-import os
 from tempfile import NamedTemporaryFile
-import uvicorn
+import os
 from transformers import pipeline
+import uvicorn
 
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG)
@@ -14,18 +14,17 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app
 app = FastAPI()
 
-# Set up CORS (Cross-Origin Resource Sharing)
-origins = [
-    "http://localhost:3000",  
-]
+# Configure CORS middleware
+origins = ["http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # Load models for transcription and summarization
 logger.debug("Loading Whisper model...")
 audio_model = whisper.load_model("base")
@@ -81,5 +80,7 @@ async def summarize_text(text: str = Body(...)):
 if __name__ == "__main__":
     logging.info("Starting FastAPI application...")
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
 
 

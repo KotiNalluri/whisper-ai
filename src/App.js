@@ -18,64 +18,82 @@ const App = () => {
 
   const startRecording = () => {
     setIsRecording(true);
+    console.log('Recording started');
   };
 
   const stopRecording = () => {
     setIsRecording(false);
+    console.log('Recording stopped');
   };
 
-  const uploadAudio = (recordedBlob) => {
+  const uploadAudio = async (recordedBlob) => {
+    console.log('Recorded Blob:', recordedBlob);
+    
+    if (!recordedBlob.blob) {
+      console.error('No audio data to upload.');
+      return;
+    }
+  
     const formData = new FormData();
     formData.append('file', recordedBlob.blob, 'recording.wav');
-
-    fetch('https://whisper-api.dev.arinternal.xyz/transcribe/', {
-      method: 'POST',
-      body: formData,
-    })
-    .then(response => {
+  
+    try {
+      const response = await fetch('https://whisper-api.dev.arinternal.xyz/transcribe/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // Add any custom headers here if your API requires them
+          // For example, you might add an authorization token
+          // 'Authorization': 'Bearer your-token-here',
+        },
+        // credentials: 'include', // Use this if you need to send cookies with requests, only if your server supports them
+      });
+  
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`Network response was not ok: ${response.statusText}`);
       }
-      return response.json();
-    })
-    .then(data => {
+  
+      const data = await response.json();
       setTranscription(data.text);
-    })
-    .catch(error => {
+      console.log('Transcription:', data.text);
+    } catch (error) {
       console.error('Error:', error);
       setTranscription('Error transcribing audio.');
-    });
+    }
   };
-
-  const summarizeAndSaveNote = () => {
+  
+  const summarizeAndSaveNote = async () => {
     if (!transcription.trim()) {
       console.warn("Transcription is empty, no data to summarize.");
       return;
     }
-
-    fetch('https://whisper-api.dev.arinternal.xyz/summarize/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: transcription }),  // Send transcription as JSON
-    })
-    .then(response => {
+  
+    try {
+      const response = await fetch('https://whisper-api.dev.arinternal.xyz/summarize/', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          // Include any additional headers your server might need
+        },
+        body: JSON.stringify({ text: transcription }), // Send transcription as JSON
+      });
+  
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`Network response was not ok: ${response.statusText}`);
       }
-      return response.json();
-    })
-    .then(data => {
+  
+      const data = await response.json();
       if (data.summary && data.summary.trim()) {
         setNotes(prevNotes => [...prevNotes, data.summary.trim()]);
         setTranscription('');
       } else {
         console.warn("Empty or invalid summary received.");
       }
-    })
-    .catch(error => {
+    } catch (error) {
       console.error('Error summarizing text:', error);
-    });
+    }
   };
+  
 
   const deleteNote = (index) => {
     setNotes(notes.filter((_, i) => i !== index));
@@ -94,6 +112,7 @@ const App = () => {
             record={isRecording}
             className="sound-wave"
             onStop={uploadAudio}
+            mimeType="audio/wav" // Ensure correct MIME type
             strokeColor="#000000"
             backgroundColor="#FF4081"
           />
@@ -131,3 +150,4 @@ const App = () => {
 };
 
 export default App;
+
