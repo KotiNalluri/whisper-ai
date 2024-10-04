@@ -28,7 +28,7 @@ const App = () => {
     const formData = new FormData();
     formData.append('file', recordedBlob.blob, 'recording.wav');
 
-    fetch('https://whisper-api.dev.arinternal.xyz/', {
+    fetch('https://whisper-api.dev.arinternal.xyz/transcribe/', { // Update the endpoint
       method: 'POST',
       body: formData,
     })
@@ -49,7 +49,7 @@ const App = () => {
     }
 
     console.log("Saving note... Transcription to summarize:", transcription);
-    fetch('https://whisper-api.dev.arinternal.xyz/', {
+    fetch('https://whisper-api.dev.arinternal.xyz/summarize/', { // Update the endpoint
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ text: transcription }),
@@ -123,5 +123,3 @@ const App = () => {
 };
 
 export default App;
-
-
