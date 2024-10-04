@@ -28,11 +28,16 @@ const App = () => {
     const formData = new FormData();
     formData.append('file', recordedBlob.blob, 'recording.wav');
 
-    fetch('https://whisper-api.dev.arinternal.xyz/transcribe/', { // Update the endpoint
+    fetch('https://whisper-api.dev.arinternal.xyz/transcribe/', {
       method: 'POST',
       body: formData,
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
     .then(data => {
       setTranscription(data.text);
     })
@@ -48,15 +53,18 @@ const App = () => {
       return;
     }
 
-    console.log("Saving note... Transcription to summarize:", transcription);
-    fetch('https://whisper-api.dev.arinternal.xyz/summarize/', { // Update the endpoint
+    fetch('https://whisper-api.dev.arinternal.xyz/summarize/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ text: transcription }),
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
     .then(data => {
-      console.log("Summary data:", data);
       if (data.summary && data.summary.trim()) {
         setNotes(prevNotes => [...prevNotes, data.summary.trim()]);
         setTranscription('');
@@ -123,3 +131,4 @@ const App = () => {
 };
 
 export default App;
+
