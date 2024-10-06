@@ -28,27 +28,30 @@ const App = () => {
     console.log('Recording stopped');
   };
 
-  const uploadAudio = async (recordedBlob) => {
+  const onStop = (recordedBlob) => {
     console.log('Recorded Blob:', recordedBlob);
-    
+    uploadAudio(recordedBlob);
+  };
+
+  const uploadAudio = async (recordedBlob) => {
     if (!recordedBlob.blob) {
       console.error('No audio data to upload.');
       return;
     }
-  
+
     const formData = new FormData();
     formData.append('file', recordedBlob.blob, 'recording.wav');
-  
+
     try {
       const response = await fetch(`${API_BASE_URL}/transcribe/`, {
         method: 'POST',
         body: formData,
       });
-  
+
       if (!response.ok) {
         throw new Error(`Network response was not ok: ${response.statusText}`);
       }
-  
+
       const data = await response.json();
       setTranscription(data.text);
       console.log('Transcription:', data.text);
@@ -57,26 +60,26 @@ const App = () => {
       setTranscription('Error transcribing audio.');
     }
   };
-  
+
   const summarizeAndSaveNote = async () => {
     if (!transcription.trim()) {
       console.warn("Transcription is empty, no data to summarize.");
       return;
     }
-  
+
     try {
       const response = await fetch(`${API_BASE_URL}/summarize/`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ text: transcription }),
       });
-  
+
       if (!response.ok) {
         throw new Error(`Network response was not ok: ${response.statusText}`);
       }
-  
+
       const data = await response.json();
       if (data.summary && data.summary.trim()) {
         setNotes(prevNotes => [...prevNotes, data.summary.trim()]);
@@ -93,10 +96,49 @@ const App = () => {
     setNotes(notes.filter((_, i) => i !== index));
   };
 
-  // ... rest of the component remains the same
-
   return (
-    // ... JSX remains the same
+    <div className="App">
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6">Voice Note App</Typography>
+        </Toolbar>
+      </AppBar>
+      <Container>
+        <Stack spacing={2} alignItems="center">
+          <ReactMic
+            record={isRecording}
+            className="sound-wave"
+            onStop={onStop}
+            strokeColor="#000000"
+            backgroundColor="#FF4081"
+          />
+          <Button variant="contained" color="primary" onClick={startRecording}>
+            Start
+          </Button>
+          <Button variant="contained" color="secondary" onClick={stopRecording}>
+            Stop
+          </Button>
+          <Button variant="contained" color="default" onClick={summarizeAndSaveNote}>
+            Summarize & Save Note
+          </Button>
+          <Box>
+            <Typography variant="body1">
+              Transcription: {transcription}
+            </Typography>
+          </Box>
+          <Box>
+            {notes.map((note, index) => (
+              <Paper key={index} elevation={3} style={{ margin: 10, padding: 10 }}>
+                <Typography variant="body2">{note}</Typography>
+                <Button variant="contained" color="secondary" onClick={() => deleteNote(index)}>
+                  Delete
+                </Button>
+              </Paper>
+            ))}
+          </Box>
+        </Stack>
+      </Container>
+    </div>
   );
 };
 
